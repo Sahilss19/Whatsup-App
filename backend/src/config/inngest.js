@@ -22,7 +22,7 @@ const syncUser = inngest.createFunction(
         }
 
 
-        await User.create()
+        await User.create(newUser);
     }
 );
 
