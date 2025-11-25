@@ -30,22 +30,34 @@ export const useStreamChat = () => {
 
   // Initialize Stream Chat client when user and token are available
   useEffect(() => {
-    const initChat = async () => {
-      if (!tokenData?.token || !user) return;
 
+    if (!tokenData?.token || !user?.id || !STREAM_API_KEY) return;  // FIXED (your semicolon was breaking logic)
+
+    let cancelled = false; // FIXED: this must exist
+
+    const client = StreamChat.getInstance(STREAM_API_KEY); // FIXED: client must exist
+
+    const initChat = async () => {
       try {
-        const client = StreamChat.getInstance(STREAM_API_KEY);
         await client.connectUser(
           {
             id: user.id,
-            name: user.fullName,
-            image: user.imageUrl
+            name:
+              user.fullName ??
+              user.primaryEmailAddress?.emailAddress ??
+              user.id,
+            image: user.imageUrl ?? undefined
           },
           tokenData.token
         );
-        setChatClient(client);
+
+        if (!cancelled) {
+          setChatClient(client);
+        }
+
       } catch (error) {
         console.log("Error connecting to the stream ", error)
+
         Sentry.captureException(error, {
           tags: {
             components: "useStreamChat"
@@ -59,16 +71,15 @@ export const useStreamChat = () => {
       }
     };
 
-    initChat();
+    initChat(); 
 
     // Cleanup function to disconnect user on unmount
     return () => {
-      if (chatClient) {
-        chatClient.disconnectUser();
-      }
+      cancelled = true;
+      client.disconnectUser(); // FIXED: client must exist here
     };
 
-  }, [tokenData, user, chatClient]);
+  }, [tokenData?.token, user?.id]);
 
   return { chatClient, isLoading: tokenLoading, error: tokenError };
 };
