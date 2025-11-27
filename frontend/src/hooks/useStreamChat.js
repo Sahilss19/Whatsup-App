@@ -19,11 +19,11 @@ export const useStreamChat = () => {
   // Fetch Stream token using React Query
   const {
     data: tokenData,
-    isLoading: tokenLoading,
-    error: tokenError
+    isLoading,
+    error,
   } = useQuery({
     queryKey: ["streamToken"],
-    queryFn: () => getStreamToken(), // FIXED: function MUST be called
+    queryFn: getStreamToken,
     enabled: !!user?.id // only run if user is available
     //this will take the  obbj and convertt it into a boolean value
   });
@@ -76,10 +76,10 @@ export const useStreamChat = () => {
     // Cleanup function to disconnect user on unmount
     return () => {
       cancelled = true;
-      client.disconnectUser(); // FIXED: client must exist here
+      client.disconnectUser(); //  client must exist here
     };
 
   }, [tokenData?.token, user?.id]);
 
-  return { chatClient, isLoading: tokenLoading, error: tokenError };
+  return { chatClient, isLoading, error };
 };

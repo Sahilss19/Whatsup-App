@@ -7,10 +7,17 @@ import { clerkMiddleware } from '@clerk/express';
 import { inngest , functions } from './config/inngest.js';
 import { serve } from 'inngest/express';
 import chatRoutes from './routes/chat.route.js';
+import cors from 'cors';
 import * as Sentry from "@sentry/node";
 
 const app = express();
 app.use(express.json()); //middleware to parse json body
+
+app.use(cors({
+    origin: "http://localhost:5173",
+    credentials: true
+}));
+
 
 app.use(clerkMiddleware()); //req.auth property will be available
 
@@ -36,7 +43,7 @@ Sentry.setupExpressErrorHandler(app); //sentry error handler middleware
 const startServer = async () => {
     try {
         await connectDB();
-        if (!ENV.NODE_ENV !== 'production') {
+        if (ENV.NODE_ENV !== 'production') {
             app.listen(ENV.PORT, () => {
                 console.log("Server is running on port:" , ENV.PORT);
             });

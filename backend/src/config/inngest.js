@@ -8,45 +8,45 @@ export const inngest = new Inngest({ id: "Whatsup" });
 const syncUser = inngest.createFunction(
   { name: "Sync User" },
   { event: "clerk/user.created" },
-    async ({ event }) => {
-        await connectDB()
+  async ({ event }) => {
+    await connectDB();
 
-        const {id , email_addresses, first_name,last_name , image_url} = event.data;
+    const { id, email_addresses, first_name, last_name, image_url } =
+      event.data;
 
+    const newUser = {
+      clerkId: id,
+      email: email_addresses[0].email_address,
+      name: `${first_name || ""} ${last_name || ""}`,
+      image: image_url,
+    };
 
-        const newUser = {
-            clerkId: id,
-            email: email_addresses[0].email_address,
-            name: `${first_name || ""} ${last_name || ""}`,
-            image: image_url,
-        }
+    await User.create(newUser);
 
-
-        await User.create(newUser);
-
-        await upsertStreamUser({
-            id: newUser.clerkId.toString(),
-            name: newUser.name,
-            email: newUser.email,
-            image: newUser.image,
-        });
-    }
-);
-
-
-const deleteUserFromDb = inngest.createFunction(
-  { id : "delete-User-From-Db" },
-  { event : "clerk/user.deleted" },
-    async ({ event }) => {
-      await connectDB();
-        const { id } = event.data;
-        await User.deleteOne({ clerkId: id });
-        // await deleteStreamUser(id.toString());
-
-        await deleteStreamUser(id.toString());
+    await upsertStreamUser({
+      id: newUser.clerkId.toString(),
+      name: newUser.name,
+      email: newUser.email,
+      image: newUser.image,
     });
 
-        await connectDB();
+    await addUserToPublicChannel(newUser.clerkId.toString());
+  }
+);
 
+const deleteUserFromDb = inngest.createFunction(
+  { id: "delete-User-From-Db" },
+  { event: "clerk/user.deleted" },
+  async ({ event }) => {
+    await connectDB();
+    const { id } = event.data;
+    await User.deleteOne({ clerkId: id });
+    // await deleteStreamUser(id.toString());
 
-export const functions = [syncUser , deleteUserFromDb];
+    await deleteStreamUser(id.toString());
+  }
+);
+
+await connectDB();
+
+export const functions = [syncUser, deleteUserFromDb];
